@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe | Pranav Mahaseth</title>
+
+<style>
+:root{
+  --bg:#020617;
+  --card:#020617;
+  --grid:#22c55e;
+  --x:#38bdf8;
+  --o:#f472b6;
+  --text:#e5e7eb;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:Segoe UI, sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#0f172a,#020617);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* ===== HEADER ===== */
+header{
+  margin-top:20px;
+  text-align:center;
+}
+header h1{
+  margin:0;
+  font-size:2rem;
+  color:var(--grid);
+  text-shadow:0 0 15px rgba(34,197,94,.7);
+}
+header p{
+  margin:6px 0 0;
+  opacity:.8;
+}
+
+/* ===== GAME CARD ===== */
+.game-card{
+  margin-top:20px;
+  background:rgba(2,6,23,.9);
+  padding:20px;
+  border-radius:18px;
+  box-shadow:0 20px 50px rgba(0,0,0,.6);
+  width:320px;
+  text-align:center;
+}
+
+/* MODE BUTTONS */
+.mode{
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
+}
+.mode button{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#1e293b;
+  color:#fff;
+  cursor:pointer;
+}
+.mode button.active{
+  background:var(--grid);
+  color:#000;
+  font-weight:600;
+}
+
+/* STATUS */
+.status{
+  margin:10px 0 6px;
+  font-size:1rem;
+}
+.points{
+  font-size:.9rem;
+  opacity:.9;
+}
+
+/* ===== BOARD ===== */
+.board{
+  width:280px;
+  height:280px;
+  margin:18px auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border:4px solid var(--grid);
+  border-radius:16px;
+  box-shadow:0 0 25px rgba(34,197,94,.6);
+}
+
+.cell{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:3.2rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+
+/* GRID LINES */
+.cell:not(:nth-child(3n)){
+  border-right:2px solid var(--grid);
+}
+.cell:nth-child(-n+6){
+  border-bottom:2px solid var(--grid);
+}
+
+/* HOVER */
+.cell:hover{
+  background:rgba(34,197,94,.08);
+}
+
+/* SYMBOL COLORS */
+.cell.X{
+  color:var(--x);
+  text-shadow:0 0 12px var(--x);
+}
+.cell.O{
+  color:var(--o);
+  text-shadow:0 0 12px var(--o);
+}
+
+/* RESET */
+.reset{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:12px;
+  background:#334155;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* ANIMATIONS */
+.win{
+  animation:winGlow 1s infinite alternate;
+}
+@keyframes winGlow{
+  from{box-shadow:0 0 15px var(--grid)}
+  to{box-shadow:0 0 35px var(--grid)}
+}
+.lose{
+  animation:shake .4s;
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}
+  75%{transform:translateX(6px)}
+}
+
+/* ===== FOOTER ===== */
+footer{
+  margin:25px 0 15px;
+  text-align:center;
+  font-size:.85rem;
+}
+footer a{
+  color:var(--grid);
+  text-decoration:none;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>Pranav Mahaseth</h1>
+  <p>Advanced Tic Tac Toe Game</p>
+</header>
+
+<!-- GAME -->
+<div class="game-card" id="gameCard">
+
+  <div class="mode">
+    <button id="pvp" class="active">Friend vs Friend</button>
+    <button id="cpu">Vs Computer</button>
+  </div>
+
+  <div class="status" id="status">Player X turn</div>
+  <div class="points">Points: <span id="points">0</span></div>
+
+  <div class="board" id="board"></div>
+
+  <button class="reset" onclick="resetGame()">Reset Game</button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Learn Python:
+    <a href="https://learners-python.blogspot.com/?m=1" target="_blank">
+      learners-python.blogspot.com
+    </a>
+  </p>
+  <p>
+    <a href="https://youtube.com/@captainpranavos?si=Bz4YoSCq32vOfsYT" target="_blank">YouTube</a>
+    |
+    <a href="https://www.instagram.com/captainpranavos_2?igsh=dm5ncW5lMXZlN2Fi" target="_blank">Instagram</a>
+  </p>
+</footer>
+
+<script>
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
+const pointsEl = document.getElementById("points");
+const gameCard = document.getElementById("gameCard");
+
+const pvpBtn = document.getElementById("pvp");
+const cpuBtn = document.getElementById("cpu");
+
+let board = ["","","","","","","","",""];
+let current = "X";
+let gameOver = false;
+let vsCPU = false;
+
+let points = Number(localStorage.getItem("points")) || 0;
+pointsEl.textContent = points;
+
+const wins = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+function drawBoard(){
+  boardEl.innerHTML="";
+  board.forEach((v,i)=>{
+    const cell=document.createElement("div");
+    cell.className="cell";
+    if(v) cell.classList.add(v);
+    cell.textContent=v;
+    cell.onclick=()=>move(i);
+    boardEl.appendChild(cell);
+  });
+}
+drawBoard();
+
+function move(i){
+  if(board[i] || gameOver) return;
+  board[i] = current;
+  drawBoard();
+
+  if(checkWin(current)){
+    statusEl.textContent = current==="X" ? "You Win 🎉" : "You Lose 😢";
+    gameOver = true;
+    updatePoints(current==="X" ? 10 : -5);
+    gameCard.classList.add(current==="X" ? "win" : "lose");
+    return;
+  }
+
+  if(board.every(c=>c)){
+    statusEl.textContent="Draw 🤝";
+    gameOver=true;
+    return;
+  }
+
+  current = current==="X" ? "O" : "X";
+  statusEl.textContent = `Player ${current} turn`;
+
+  if(vsCPU && current==="O") cpuMove();
+}
+
+function cpuMove(){
+  setTimeout(()=>{
+    let empty = board
+      .map((v,i)=>v===""?i:null)
+      .filter(v=>v!==null);
+    let choice = empty[Math.floor(Math.random()*empty.length)];
+    if(choice!==undefined) move(choice);
+  },500);
+}
+
+function checkWin(p){
+  return wins.some(w=>w.every(i=>board[i]===p));
+}
+
+function updatePoints(val){
+  points = Math.max(0, points + val);
+  localStorage.setItem("points", points);
+  pointsEl.textContent = points;
+}
+
+function resetGame(){
+  board=["","","","","","","","",""];
+  current="X";
+  gameOver=false;
+  statusEl.textContent="Player X turn";
+  gameCard.classList.remove("win","lose");
+  drawBoard();
+}
+
+pvpBtn.onclick=()=>{
+  vsCPU=false;
+  pvpBtn.classList.add("active");
+  cpuBtn.classList.remove("active");
+  resetGame();
+};
+
+cpuBtn.onclick=()=>{
+  vsCPU=true;
+  cpuBtn.classList.add("active");
+  pvpBtn.classList.remove("active");
+  resetGame();
+};
+</script>
+
+</body>
+</html>a
